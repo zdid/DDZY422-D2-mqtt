@@ -1,0 +1,13 @@
+[Unit]
+Description=DDZY422-D2 (RS485) vers MQTT / Home Assistant
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+# Adaptez le port série, l'adresse du compteur et le broker MQTT (ou utilisez --config /etc/ddzy422d2-mqtt.conf).
+ExecStart=/usr/bin/python3 /opt/ddzy422d2-mqtt/ddzy422d2-mqtt.py --device /dev/ttyUSB0 --address 1 --mqtt-host 127.0.0.1
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

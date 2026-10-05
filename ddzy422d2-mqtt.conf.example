@@ -1,0 +1,22 @@
+# Exemple de fichier de configuration : python3 ddzy422d2-mqtt.py --config /etc/ddzy422d2-mqtt.conf
+# Les clés sont les options de la ligne de commande sans « -- » ; la ligne de commande a la priorité sur ce fichier.
+# Si le fichier contient un mot de passe : chmod 600 /etc/ddzy422d2-mqtt.conf
+[ddzy422d2]
+device = /dev/ttyUSB0
+baud = 9600
+parity = E
+address = 1
+# auto : s'intercale entre les échanges du module Wi-Fi s'il est présent ; non : pas de module, interrogation libre
+module-wifi = auto
+
+mqtt-host = 127.0.0.1
+mqtt-port = 1883
+# Connexion anonyme si mqtt-user est vide
+mqtt-user =
+mqtt-password =
+
+prefix = homeassistant
+topic = ddzy422d2
+node = ddzy422d2
+name = Compteur DDZY422-D2
+interval = 5
