@@ -188,3 +188,21 @@ Ce dépôt est aussi le fournisseur de l'agent DDZY422-D2 du projet [dimotic-ha]
 ## Licence
 
 MIT, voir [LICENSE](LICENSE).
+
+## Remplacer un DDSU666-H (migration)
+
+`outils/migrer-depuis-ddsu.sh` remplace un compteur DDSU666-H par un DDZY422-D2 **avec les mêmes entités Home Assistant**. À lancer
+en root, sur place, dans une session SSH, depuis le dossier de l'agent :
+
+```bash
+sudo ./outils/migrer-depuis-ddsu.sh --simulation   # ne change rien : montre ce qui serait fait
+sudo ./outils/migrer-depuis-ddsu.sh                # migration (une pause pour changer le câble RS485)
+sudo ./outils/migrer-depuis-ddsu.sh --annuler      # retour au DDSU (remettre l'ancien câble)
+```
+
+Le script reprend les réglages du DDSU (broker, port série, nœud, thème, nom d'appareil — lus dans son unité systemd et dans sa
+découverte MQTT ; modifiables par `--mqtt-host`, `--peripherique`, `--noeud`, `--theme`, `--nom`, `--adresse`, `--parite`), relève ses
+énergies, **arrête, désactive et masque** le service DDSU (son unité est gardée), attend le changement de câble, lit le DDZY à vide pour
+calculer les décalages d'énergie, installe l'agent dans `/dimotic-ha-addons/ddzy422d2-mqtt/` (script, `.conf` en `convention-ddsu`,
+`.service` — lié dans `/etc/systemd/system/`, comme les autres agents de dimotic-ha) et l'active : démarrage au boot, relance en cas
+d'arrêt (`Restart=always`). Il vérifie ensuite qu'un état arrive avec des totaux qui se suivent.
