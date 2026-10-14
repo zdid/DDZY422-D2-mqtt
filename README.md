@@ -179,7 +179,7 @@ python3 outils/rs485-sniffer.py /dev/ttyUSB0 9600 8 E 1
 
 ## Statut
 
-Version **0.9.1**. Le script a été essayé sur le bus d'un compteur réel (écoute et interrogation à 5 s en
+Version **0.9.2**. Le script a été essayé sur le bus d'un compteur réel (écoute et interrogation à 5 s en
 cohabitation avec le module Wi-Fi) ; la version publiée ici est une réécriture sans dépendance, validée contre un faux
 compteur (trame réelle) mais pas encore exploitée en continu sur du matériel.
 
