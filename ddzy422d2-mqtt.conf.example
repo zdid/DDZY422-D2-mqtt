@@ -16,7 +16,13 @@ mqtt-user =
 mqtt-password =
 
 prefix = homeassistant
-topic = ddzy422d2
-node = ddzy422d2
-name = Compteur DDZY422-D2
+# Noms (défaut : ddzy422d2 / Compteur DDZY422-D2 ; ddsu666h / Compteur DDSU666-H avec convention-ddsu)
+#topic = ddzy422d2
+#node = ddzy422d2
+#name = Compteur DDZY422-D2
+# Remplacement d'un DDSU666-H : mêmes entités, signes et réactive comme le DDSU (voir le README)
+#convention-ddsu = oui
+# kWh ajoutés aux énergies, pour reprendre les totaux du compteur remplacé
+#decalage-import = 0
+#decalage-export = 0
 interval = 5

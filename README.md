@@ -58,7 +58,9 @@ Les réglages se donnent par la **ligne de commande**, par un **fichier de confi
 | `--name` | `Compteur DDZY422-D2` | nom de l'appareil dans Home Assistant |
 | `--interval` | `5` | secondes entre deux lectures (1 à 60) |
 | `--module-wifi` | `auto` | `auto` : s'intercale entre les échanges du module Wi-Fi s'il est présent ; `non` : pas de module, interrogation libre |
-| `--convention-ddsu` | | publie la puissance réactive et le facteur de puissance **comme le DDSU666-H** : réactive = −√(S²−P²) (toujours négative), facteur de puissance de signe opposé. Mesuré sur 16 h en parallèle : la réactive brute du DDZY ne cadre pas avec sa propre puissance apparente et active (écart moyen 266 var), celle du DDSU est exactement −√(S²−P²) (0,1 var). À utiliser pour **remplacer un DDSU** en gardant les mêmes entités et des historiques continus |
+| `--topic`, `--node`, `--name` | `ddzy422d2`, `ddzy422d2`, `Compteur DDZY422-D2` | thème de l'état, identifiant du nœud (base des identifiants d'entités : `sensor.<nœud>_power`…) et nom de l'appareil dans Home Assistant ; un nom donné explicitement a priorité sur la valeur par défaut de `--convention-ddsu` |
+| `--decalage-import`, `--decalage-export` | `0` | kWh ajoutés à l'énergie importée / exportée (l'énergie totale est recalculée) : pour **reprendre les totaux d'un compteur remplacé** et éviter un saut dans les statistiques |
+| `--convention-ddsu` | | **remplacer un DDSU666-H sans rien changer dans Home Assistant** : puissance réactive = −√(S²−P²) (toujours négative) et facteur de puissance de signe opposé, comme le DDSU ; noms par défaut `ddsu666h` / `Compteur DDSU666-H` (mêmes entités, mêmes historiques). Mesuré sur 16 h en parallèle : la réactive brute du DDZY ne cadre pas avec sa propre puissance apparente et active (écart moyen 266 var), celle du DDSU est exactement −√(S²−P²) (0,1 var) |
 | `--once` | | une seule lecture puis sortie |
 | `--dry-run` | | affiche les messages au lieu de les envoyer |
 

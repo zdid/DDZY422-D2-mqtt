@@ -207,6 +207,7 @@ def publish(args, topic, payload, retain=False):
 
 
 BOOLEANS = ("once", "dry_run", "convention_ddsu")
+FLOATS = ("decalage_import", "decalage_export")
 
 
 def load_config(path, valid):
@@ -222,7 +223,7 @@ def load_config(path, valid):
         dest = key.strip().lower().replace("-", "_")
         if dest not in valid:
             sys.exit("%s : option inconnue « %s »" % (path, key))
-        values[dest] = raw.strip().lower() in ("1", "true", "yes", "oui", "on") if dest in BOOLEANS else raw.strip()
+        values[dest] = raw.strip().lower() in ("1", "true", "yes", "oui", "on") if dest in BOOLEANS else float(raw) if dest in FLOATS else raw.strip()
     return values
 
 
@@ -238,16 +239,18 @@ def main():
     ap.add_argument("--mqtt-user", default="", help="nom d'utilisateur MQTT (vide = connexion anonyme)")
     ap.add_argument("--mqtt-password", default="", help="mot de passe MQTT (préférer le fichier de configuration, voir le README)")
     ap.add_argument("--prefix", default="homeassistant", help="préfixe de découverte de Home Assistant")
-    ap.add_argument("--topic", default="ddzy422d2", help="thème de l'état")
-    ap.add_argument("--node", default="ddzy422d2")
-    ap.add_argument("--name", default="Compteur DDZY422-D2")
+    ap.add_argument("--topic", default=None, help="thème de l'état (défaut : ddzy422d2 ; ddsu666h avec --convention-ddsu)")
+    ap.add_argument("--node", default=None, help="identifiant du nœud, base des identifiants d'entités (défaut : ddzy422d2 ; ddsu666h avec --convention-ddsu)")
+    ap.add_argument("--name", default=None, help="nom de l'appareil dans Home Assistant (défaut : Compteur DDZY422-D2 ; Compteur DDSU666-H avec --convention-ddsu)")
+    ap.add_argument("--decalage-import", type=float, default=0.0, help="kWh ajoutés à l'énergie importée (reprendre le total d'un compteur remplacé)")
+    ap.add_argument("--decalage-export", type=float, default=0.0, help="kWh ajoutés à l'énergie exportée")
     ap.add_argument("--interval", type=int, default=5, help="secondes entre deux lectures (1 à 60)")
     ap.add_argument("--module-wifi", default="auto", choices=["auto", "non"],
                     help="auto : s'intercale entre les échanges du module Wi-Fi s'il est présent ; non : interroge librement (pas de module)")
     ap.add_argument("--convention-ddsu", action="store_true",
-                    help="publie la puissance réactive et le facteur de puissance comme le DDSU666-H (réactive = -racine(S²-P²), "
-                         "toujours négative ; facteur de puissance de signe opposé) : remplacement d'un DDSU, mêmes entités, "
-                         "historiques continus")
+                    help="se comporte comme le DDSU666-H : réactive = -racine(S²-P²) (toujours négative), facteur de puissance de signe opposé, "
+                         "et noms par défaut en ddsu666h (nœud, thème, appareil) : remplacement d'un DDSU avec les mêmes entités "
+                         "et des historiques continus")
     ap.add_argument("--once", action="store_true", help="une seule lecture puis sortie")
     ap.add_argument("--dry-run", action="store_true", help="affiche les messages au lieu de les envoyer à MQTT")
     known, _ = ap.parse_known_args()
@@ -270,6 +273,10 @@ def main():
     if args.mqtt_password and not args.mqtt_user:
         ap.error("--mqtt-password demande --mqtt-user")
     args.interval = min(60, max(1, args.interval))
+    base = "ddsu666h" if args.convention_ddsu else "ddzy422d2"
+    args.topic = args.topic or base
+    args.node = args.node or base
+    args.name = args.name or ("Compteur DDSU666-H" if args.convention_ddsu else "Compteur DDZY422-D2")
 
     fd = open_serial(args.device, args.baud, args.parity)
     bus = Bus(fd, build_request(args.address))
@@ -302,6 +309,10 @@ def main():
                 publish(args, topic, payload, retain)
             last_discovery = started
         values = poll(bus, args.address)
+        if values and (args.decalage_import or args.decalage_export):
+            values["energy_import"] = round(values["energy_import"] + args.decalage_import, 2)
+            values["energy_export"] = round(values["energy_export"] + args.decalage_export, 2)
+            values["energy_total"] = round(values["energy_import"] - values["energy_export"], 2)
         if values and args.convention_ddsu:
             # La réactive brute du DDZY ne cadre pas avec ses propres S et P (mesurée sur 16 h : écart moyen 266 var) ;
             # celle du DDSU vaut exactement -racine(S²-P²) (écart moyen 0,1 var, toujours négative).
