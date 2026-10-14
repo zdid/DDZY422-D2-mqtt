@@ -30,6 +30,7 @@
 import argparse
 import configparser
 import json
+import math
 import os
 import select
 import struct
@@ -205,7 +206,7 @@ def publish(args, topic, payload, retain=False):
         return False
 
 
-BOOLEANS = ("once", "dry_run")
+BOOLEANS = ("once", "dry_run", "convention_ddsu")
 
 
 def load_config(path, valid):
@@ -243,6 +244,10 @@ def main():
     ap.add_argument("--interval", type=int, default=5, help="secondes entre deux lectures (1 à 60)")
     ap.add_argument("--module-wifi", default="auto", choices=["auto", "non"],
                     help="auto : s'intercale entre les échanges du module Wi-Fi s'il est présent ; non : interroge librement (pas de module)")
+    ap.add_argument("--convention-ddsu", action="store_true",
+                    help="publie la puissance réactive et le facteur de puissance comme le DDSU666-H (réactive = -racine(S²-P²), "
+                         "toujours négative ; facteur de puissance de signe opposé) : remplacement d'un DDSU, mêmes entités, "
+                         "historiques continus")
     ap.add_argument("--once", action="store_true", help="une seule lecture puis sortie")
     ap.add_argument("--dry-run", action="store_true", help="affiche les messages au lieu de les envoyer à MQTT")
     known, _ = ap.parse_known_args()
@@ -297,6 +302,12 @@ def main():
                 publish(args, topic, payload, retain)
             last_discovery = started
         values = poll(bus, args.address)
+        if values and args.convention_ddsu:
+            # La réactive brute du DDZY ne cadre pas avec ses propres S et P (mesurée sur 16 h : écart moyen 266 var) ;
+            # celle du DDSU vaut exactement -racine(S²-P²) (écart moyen 0,1 var, toujours négative).
+            s, p = values["apparent_power"], values["power"]
+            values["reactive_power"] = -round(math.sqrt(max(s * s - p * p, 0.0)), 1)
+            values["power_factor"] = round(-values["power_factor"], 3) + 0.0
         if values is None:
             failures += 1
             if failures in (1, 5) or failures % 60 == 0:

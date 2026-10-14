@@ -58,6 +58,7 @@ Les réglages se donnent par la **ligne de commande**, par un **fichier de confi
 | `--name` | `Compteur DDZY422-D2` | nom de l'appareil dans Home Assistant |
 | `--interval` | `5` | secondes entre deux lectures (1 à 60) |
 | `--module-wifi` | `auto` | `auto` : s'intercale entre les échanges du module Wi-Fi s'il est présent ; `non` : pas de module, interrogation libre |
+| `--convention-ddsu` | | publie la puissance réactive et le facteur de puissance **comme le DDSU666-H** : réactive = −√(S²−P²) (toujours négative), facteur de puissance de signe opposé. Mesuré sur 16 h en parallèle : la réactive brute du DDZY ne cadre pas avec sa propre puissance apparente et active (écart moyen 266 var), celle du DDSU est exactement −√(S²−P²) (0,1 var). À utiliser pour **remplacer un DDSU** en gardant les mêmes entités et des historiques continus |
 | `--once` | | une seule lecture puis sortie |
 | `--dry-run` | | affiche les messages au lieu de les envoyer |
 
