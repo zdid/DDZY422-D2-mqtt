@@ -47,6 +47,8 @@ FORBIDDEN = ((-1.5, 2.0), (21.5, 25.0), (52.5, 56.0))   # fenêtres du module ap
 MODULE_STALE = 150.0           # au-delà, le module est considéré absent tant qu'on ne le revoit pas
 MODULE_WAIT = 90.0             # attente maximale du premier échange du module au démarrage (mode auto)
 SILENCE = 0.15                 # silence du bus exigé avant d'émettre (s)
+REOPEN_AFTER = 60.0            # sans aucune lecture réussie depuis ce délai (s) : réouverture du port série
+EXIT_AFTER = 180.0             # toujours rien : arrêt du script, systemd le relance (Restart=always)
 
 
 def crc16_modbus(data):
@@ -292,6 +294,7 @@ def main():
               "aucun échange de module Wi-Fi vu en %d s : interrogation libre (il sera pris en compte s'il apparaît)" % MODULE_WAIT, flush=True)
 
     last_discovery, failures = 0.0, 0
+    failing_since, reopened = 0.0, False
     next_read = time.time()
     while True:
         bus.listen(max(0.0, next_read - time.time()))
@@ -321,11 +324,27 @@ def main():
             values["power_factor"] = round(-values["power_factor"], 3) + 0.0
         if values is None:
             failures += 1
+            if failures == 1:
+                failing_since, reopened = started, False
             if failures in (1, 5) or failures % 60 == 0:
                 print("lecture impossible (%d échec(s) de suite) — câblage, adresse, parité ou port occupé ?" % failures, flush=True)
+            # Pilote resté bloqué 2 jours sur noisy (compteur et bus sains, simple redémarrage suffisant) : on rouvre le
+            # port, puis on quitte pour laisser systemd relancer (Restart=always). Jamais en --once.
+            if not args.once and not reopened and started - failing_since >= REOPEN_AFTER:
+                print("aucune lecture depuis %d s : réouverture du port série" % REOPEN_AFTER, flush=True)
+                try:
+                    os.close(bus.fd)
+                    bus.fd = open_serial(args.device, args.baud, args.parity)
+                except (OSError, termios.error) as e:        # port disparu ou refusé : systemd fera mieux
+                    print("réouverture impossible (%s) : arrêt (relance par systemd)" % e, flush=True)
+                    sys.exit(1)
+                bus.buf, reopened = b"", True
+            elif not args.once and started - failing_since >= EXIT_AFTER:
+                print("aucune lecture depuis %d s malgré la réouverture du port : arrêt (relance par systemd)" % EXIT_AFTER, flush=True)
+                sys.exit(1)
         else:
             if failures:
-                print("lecture rétablie après %d échec(s)" % failures, flush=True)
+                print("lecture rétablie après %d échec(s)%s" % (failures, " (port rouvert)" if reopened else ""), flush=True)
             failures = 0
             publish(args, args.topic + "/state", json.dumps(values), False)
         if args.once:

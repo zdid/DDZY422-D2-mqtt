@@ -179,9 +179,10 @@ python3 outils/rs485-sniffer.py /dev/ttyUSB0 9600 8 E 1
 
 ## Statut
 
-Version **0.9.2**. Le script a été essayé sur le bus d'un compteur réel (écoute et interrogation à 5 s en
-cohabitation avec le module Wi-Fi) ; la version publiée ici est une réécriture sans dépendance, validée contre un faux
-compteur (trame réelle) mais pas encore exploitée en continu sur du matériel.
+Version **0.9.3**. En service continu depuis le 19/10/2026 sur un compteur réel (interrogation à 5 s en cohabitation
+avec le module Wi-Fi). Sans aucune lecture réussie pendant 60 s, le script rouvre le port série ; toujours rien après
+180 s, il s'arrête et laisse systemd le relancer (`Restart=always`) : un blocage de 2 jours a été constaté alors que le
+compteur et le bus répondaient, et un simple redémarrage l'avait levé.
 
 Ce dépôt est aussi le fournisseur de l'agent DDZY422-D2 du projet [dimotic-ha](https://github.com/zdid/dimotic-ha).
 
